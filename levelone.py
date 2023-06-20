@@ -95,9 +95,9 @@ class MyGame(arcade.Window):
     def on_update(self, delta_time):
         """ Movement and game logic """
         self.player_sprite.update()
-        if arcade.check_for_collision_with_list(self.player, self.walls):
+        if arcade.check_for_collision_with_list(self.player_sprite, self.walls):
             self.setup() # Restart the game on collision
-        if arcade.check_for_collision_with_list(self.player, self.walls):
+        if arcade.check_for_collision_with_list(self.player_sprite, self.walls):
             self.setup() # Restart the game on collision
 
         # Generate a list of all sprites that collided with the player.
