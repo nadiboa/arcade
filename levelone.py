@@ -2,6 +2,7 @@
 import random
 import arcade
 
+
 # --- Constants ---
 SPRITE_SCALING_PLAYER = 1
 SPRITE_SCALING_FROSTFIRE = 0.5
