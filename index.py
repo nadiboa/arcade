@@ -7,6 +7,8 @@ import os
 NATIVE_SPRITE_SIZE = 128
 SPRITE_SCALING = 0.25
 SPRITE_SIZE = int(NATIVE_SPRITE_SIZE * SPRITE_SCALING)
+SPRITE_SCALING_FROSTFIRE = 0.5
+FROSTFIRE_COUNT = 50
 
 SCREEN_WIDTH = 1500
 SCREEN_HEIGHT = 1500
@@ -92,7 +94,7 @@ class MyGame(arcade.Window):
         self.player_list = None
         self.wall_list = None
         self.frostfire_list = None
-
+      
         # Player info
         self.score = 0
         self.player_sprite = None
@@ -188,6 +190,24 @@ class MyGame(arcade.Window):
         self.view_bottom = 0
         print(f"Total wall blocks: {len(self.wall_list)}")
 
+
+          # Create the coins
+        for i in range(FROSTFIRE_COUNT):
+
+            # Create the frostfire instance
+           
+            frostfire = arcade.Sprite("frost fire.png",
+                                 SPRITE_SCALING_FROSTFIRE)
+
+            # Position the coin
+            frostfire.center_x = random.randrange(SCREEN_WIDTH)
+            frostfire.center_y = random.randrange(SCREEN_HEIGHT)
+
+            # Add the coin to the lists
+            self.frostfire_list.append(frostfire)
+            
+
+
     def on_draw(self):
         """
         Render the screen.
@@ -202,6 +222,7 @@ class MyGame(arcade.Window):
         # Draw all the sprites.
         self.wall_list.draw()
         self.player_list.draw()
+        self.frostfire_list.draw()
 
         # Draw info on the screen
         sprite_count = len(self.wall_list)
@@ -226,6 +247,7 @@ class MyGame(arcade.Window):
 
         self.draw_time = timeit.default_timer() - draw_start_time
 
+       
     def on_mouse_motion(self, x, y, dx, dy):
         """ Handle Mouse Motion """
 
@@ -237,9 +259,9 @@ class MyGame(arcade.Window):
         """ Movement and game logic """
     
         self.player_sprite.update()
-        if arcade.check_for_collision_with_list(self.player_sprite, self.wall):
+        if arcade.check_for_collision_with_list(self.player_sprite, self.wall_list):
             self.setup() # Restart the game on collision
-        if arcade.check_for_collision_with_list(self.player_sprite, self.wall):
+        if arcade.check_for_collision_with_list(self.player_sprite, self.wall_list):
             self.setup() # Restart the game on collision
 
         # Generate a list of all sprites that collided with the player.
@@ -295,7 +317,15 @@ class MyGame(arcade.Window):
 
         # Save the time it took to do this.
         self.processing_time = timeit.default_timer() - start_time
+  
+  # Generate a list of all sprites that collided with the player.
+        frostfires_hit_list = arcade.check_for_collision_with_list(self.player_sprite,
+                                                              self.frostfire_list)
 
+        # Loop through each colliding sprite, remove it, and add to the score.
+        for frostfire in frostfires_hit_list:
+            frostfire.remove_from_sprite_lists()
+            self.score += 1
 
 def main():
     """ Main function """
