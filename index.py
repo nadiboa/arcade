@@ -14,7 +14,7 @@ SCREEN_WIDTH = 1500
 SCREEN_HEIGHT = 1500
 SCREEN_TITLE = "Maze Depth First Example"
 
-MOVEMENT_SPEED = 8
+MOVEMENT_SPEED = 1
 
 TILE_EMPTY = 0
 TILE_CRATE = 1
@@ -199,12 +199,24 @@ class MyGame(arcade.Window):
             frostfire = arcade.Sprite("frost fire.png",
                                  SPRITE_SCALING_FROSTFIRE)
 
-            # Position the coin
-            frostfire.center_x = random.randrange(SCREEN_WIDTH)
-            frostfire.center_y = random.randrange(SCREEN_HEIGHT)
+            # Position the frost
+            
+            frostfire.center_x = random.randrange(MAZE_WIDTH * SPRITE_SIZE)
+            frostfire.center_y = random.randrange(MAZE_HEIGHT * SPRITE_SIZE)
+
+            # Are we in a wall?
+            walls_hit = arcade.check_for_collision_with_list(self.frostfire_list, self.wall_list)
+            if len(walls_hit) == 0:
+                # Not in a wall! Success!
+                placed = True
+
+        self.physics_engine = arcade.PhysicsEngineSimple(self.frostfire_list, self.wall_list)
+
+           
 
             # Add the coin to the lists
-            self.frostfire_list.append(frostfire)
+
+        self.frostfire_list.append(frostfire)
             
 
 
