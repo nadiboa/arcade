@@ -5,10 +5,10 @@ import timeit
 import os
 
 NATIVE_SPRITE_SIZE = 128
-SPRITE_SCALING = 0.25
+SPRITE_SCALING = 0.5
 SPRITE_SIZE = int(NATIVE_SPRITE_SIZE * SPRITE_SCALING)
 SPRITE_SCALING_FROSTFIRE = 0.5
-FROSTFIRE_COUNT = 50
+FROSTFIRE_COUNT = 100
 
 SCREEN_WIDTH = 1500
 SCREEN_HEIGHT = 1500
@@ -74,14 +74,17 @@ def make_maze_depth_first(maze_width, maze_height):
     return maze
 
 
-class MyGame(arcade.Window):
+class MyGame(arcade.View):
     """ Main application class. """
 
-    def __init__(self, width, height, title):
+    def __init__(self):
         """
         Initializer
         """
-        super().__init__(width, height, title)
+        # super().__init__(width, height, title)
+        super().__init__()
+        self.window.set_mouse_visible(False)
+
 
         # Set the working directory (where we expect to find files) to the same
         # directory this .py file is in. You can leave this out of your own
@@ -205,18 +208,16 @@ class MyGame(arcade.Window):
             frostfire.center_y = random.randrange(MAZE_HEIGHT * SPRITE_SIZE)
 
             # Are we in a wall?
-            walls_hit = arcade.check_for_collision_with_list(self.frostfire_list, self.wall_list)
-            if len(walls_hit) == 0:
+            #walls_hit = arcade.check_for_collision_with_list(self.frostfire_list[i], self.wall_list)
+            walls_hit = arcade.check_for_collision_with_list(frostfire, self.wall_list)
+            if len(walls_hit) != 0:
                 # Not in a wall! Success!
-                placed = True
-
-        self.physics_engine = arcade.PhysicsEngineSimple(self.frostfire_list, self.wall_list)
-
-           
+                continue
+            self.physics_engine = arcade.PhysicsEngineSimple(frostfire, self.wall_list)
 
             # Add the coin to the lists
 
-        self.frostfire_list.append(frostfire)
+            self.frostfire_list.append(frostfire)
             
 
 
@@ -339,10 +340,42 @@ class MyGame(arcade.Window):
             frostfire.remove_from_sprite_lists()
             self.score += 1
 
+class InstructionView(arcade.View):
+
+    def on_show_view(self):
+        """ This is run once when we switch to this view """
+        arcade.set_background_color(arcade.csscolor.DARK_SLATE_BLUE)
+
+        # Reset the viewport, necessary if we have a scrolling game and we need
+        # to reset the viewport back to the start so we can see what we draw.
+        arcade.set_viewport(0, self.window.width, 0, self.window.height)
+
+    def on_draw(self):
+        """ Draw this view """
+        self.clear()
+        arcade.draw_text("Instructions Screen", self.window.width / 2, self.window.height / 2,
+                         arcade.color.WHITE, font_size=50, anchor_x="center")
+        arcade.draw_text("Click to advance", self.window.width / 2, self.window.height / 2-75,
+                         arcade.color.WHITE, font_size=20, anchor_x="center")
+
+    def on_mouse_press(self, _x, _y, _button, _modifiers):
+        """ If the user presses the mouse button, start the game. """
+        game_view = MyGame()
+        game_view.setup()
+        self.window.show_view(game_view)
+
+    def main():
+        """ Main function """
+
+       
+
 def main():
     """ Main function """
-    window = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-    window.setup()
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    start_view = InstructionView()
+    window.show_view(start_view)
+
+    start_view.setup()
     arcade.run()
 
 
