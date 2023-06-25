@@ -375,7 +375,7 @@ def main():
     start_view = InstructionView()
     window.show_view(start_view)
 
-    start_view.setup()
+   
     arcade.run()
 
 
