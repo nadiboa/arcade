@@ -4,18 +4,24 @@ import arcade
 import timeit
 import os
 
-NATIVE_SPRITE_SIZE = 128
-SPRITE_SCALING = 0.5
-SPRITE_SIZE = int(NATIVE_SPRITE_SIZE * SPRITE_SCALING)
-SPRITE_SCALING_FROSTFIRE = 0.5
+from pyglet.gl import GL_NEAREST
+from pyglet.gl import GL_LINEAR
+
+
+NATIVE_TILE_SIZE = 128
+SCALE = 0.5
+TILE_SIZE = int(NATIVE_TILE_SIZE * SCALE)
+SCALE_FROSTFIRE = 3
 FROSTFIRE_COUNT = 100
 
-SCREEN_WIDTH = 1500
-SCREEN_HEIGHT = 1500
+SCALE = 1
+SCREEN_WIDTH = 960 * SCALE
+SCREEN_HEIGHT = 540 * SCALE
 SCREEN_TITLE = "Maze Depth First Example"
 
 MOVEMENT_SPEED = 1
 
+TILE_SIZE = 48 * SCALE
 TILE_EMPTY = 0
 TILE_CRATE = 1
 
@@ -46,7 +52,7 @@ def _create_grid_with_cells(width, height):
                 grid[row].append(TILE_CRATE)
     return grid
 
-
+'''
 def make_maze_depth_first(maze_width, maze_height):
     maze = _create_grid_with_cells(maze_width, maze_height)
 
@@ -72,7 +78,7 @@ def make_maze_depth_first(maze_width, maze_height):
     walk(random.randrange(w), random.randrange(h))
 
     return maze
-
+'''
 
 class MyGame(arcade.View):
     """ Main application class. """
@@ -95,7 +101,8 @@ class MyGame(arcade.View):
 
         # Sprite lists
         self.player_list = None
-        self.wall_list = None
+        self.tilemap = None
+        self.scene = None
         self.frostfire_list = None
       
         # Player info
@@ -118,54 +125,27 @@ class MyGame(arcade.View):
 
         # Sprite lists
         self.player_list = arcade.SpriteList()
-        self.wall_list = arcade.SpriteList()
         self.frostfire_list = arcade.SpriteList()
 
         self.score = 0
 
         # Create the maze
-        maze = make_maze_depth_first(MAZE_WIDTH, MAZE_HEIGHT)
+        #maze = make_maze_depth_first(MAZE_WIDTH, MAZE_HEIGHT)
 
-        # Create sprites based on 2D grid
-        if not MERGE_SPRITES:
-            # This is the simple-to-understand method. Each grid location
-            # is a sprite.
-            for row in range(MAZE_HEIGHT):
-                for column in range(MAZE_WIDTH):
-                    if maze[row][column] == 1:
-                        wall = arcade.Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING)
-                        wall.center_x = column * SPRITE_SIZE + SPRITE_SIZE + SPRITE_SIZE + SPRITE_SIZE + SPRITE_SIZE + SPRITE_SIZE + SPRITE_SIZE + SPRITE_SIZE/ 2
-                        wall.center_y = row * SPRITE_SIZE + SPRITE_SIZE / 2
-                        self.wall_list.append(wall)
-        else:
-            # This uses new Arcade 1.3.1 features, that allow me to create a
-            # larger sprite with a repeating texture. So if there are multiple
-            # cells in a row with a wall, we merge them into one sprite, with a
-            # repeating texture for each cell. This reduces our sprite count.
-            for row in range(MAZE_HEIGHT):
-                column = 0
-                while column < len(maze):
-                    while column < len(maze) and maze[row][column] == 0:
-                        column += 1
-                    start_column = column
-                    while column < len(maze) and maze[row][column] == 1:
-                        column += 1
-                    end_column = column - 1
-
-                    column_count = end_column - start_column + 1
-                    column_mid = (start_column + end_column) / 2
-
-                    wall = arcade.Sprite(":resources:images/tiles/grassCenter.png", SPRITE_SCALING,
-                                         repeat_count_x=column_count)
-                    wall.center_x = column_mid * SPRITE_SIZE + SPRITE_SIZE / 2
-                    wall.center_y = row * SPRITE_SIZE + SPRITE_SIZE / 2
-                    wall.width = SPRITE_SIZE * column_count
-                    self.wall_list.append(wall)
-
+        layer_options = {
+            "walls": {
+                "use_spatial_hash": True,
+            },
+            "doors": {
+                "use_spatial_hash": True,
+            },
+        }
+        self.tilemap = arcade.load_tilemap("tilemap test.tmx", SCALE, layer_options)
+        self.scene = arcade.Scene.from_tilemap(self.tilemap)
         # Set up the player
-        self.player_sprite = arcade.Sprite("player candel).png"
+        self.player_sprite = arcade.Sprite("new player(candel).png.png"
                                           ,
-                                           SPRITE_SCALING)
+                                           SCALE)
         self.player_list.append(self.player_sprite)
 
         # Randomly place the player. If we are in a wall, repeat until we aren't.
@@ -173,16 +153,16 @@ class MyGame(arcade.View):
         while not placed:
 
             # Randomly position
-            self.player_sprite.center_x = random.randrange(MAZE_WIDTH * SPRITE_SIZE)
-            self.player_sprite.center_y = random.randrange(MAZE_HEIGHT * SPRITE_SIZE)
+            self.player_sprite.center_x = random.randrange(MAZE_WIDTH * TILE_SIZE)
+            self.player_sprite.center_y = random.randrange(MAZE_HEIGHT * TILE_SIZE)
 
             # Are we in a wall?
-            walls_hit = arcade.check_for_collision_with_list(self.player_sprite, self.wall_list)
+            walls_hit = arcade.check_for_collision_with_list(self.player_sprite, self.scene['walls'])
             if len(walls_hit) == 0:
                 # Not in a wall! Success!
                 placed = True
 
-        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.wall_list)
+        self.physics_engine = arcade.PhysicsEngineSimple(self.player_sprite, self.scene["walls"])
 
         # Set the background color
         arcade.set_background_color(arcade.color.AMAZON)
@@ -191,7 +171,7 @@ class MyGame(arcade.View):
         # These numbers set where we have 'scrolled' to.
         self.view_left = 0
         self.view_bottom = 0
-        print(f"Total wall blocks: {len(self.wall_list)}")
+        # print(f"Total wall blocks: {len(self.scene["walls"])}")
 
 
           # Create the coins
@@ -200,20 +180,20 @@ class MyGame(arcade.View):
             # Create the frostfire instance
            
             frostfire = arcade.Sprite("frost fire.png",
-                                 SPRITE_SCALING_FROSTFIRE)
+                                 SCALE)
 
             # Position the frost
             
-            frostfire.center_x = random.randrange(MAZE_WIDTH * SPRITE_SIZE)
-            frostfire.center_y = random.randrange(MAZE_HEIGHT * SPRITE_SIZE)
+            frostfire.center_x = random.randrange(MAZE_WIDTH * TILE_SIZE)
+            frostfire.center_y = random.randrange(MAZE_HEIGHT * TILE_SIZE)
 
             # Are we in a wall?
-            #walls_hit = arcade.check_for_collision_with_list(self.frostfire_list[i], self.wall_list)
-            walls_hit = arcade.check_for_collision_with_list(frostfire, self.wall_list)
+            #walls_hit = arcade.check_for_collision_with_list(self.frostfire_list[i], self.scene["walls"])
+            walls_hit = arcade.check_for_collision_with_list(frostfire, self.scene["walls"])
             if len(walls_hit) != 0:
                 # Not in a wall! Success!
                 continue
-            self.physics_engine = arcade.PhysicsEngineSimple(frostfire, self.wall_list)
+            self.physics_engine = arcade.PhysicsEngineSimple(frostfire, self.scene["walls"])
 
             # Add the coin to the lists
 
@@ -233,12 +213,12 @@ class MyGame(arcade.View):
         draw_start_time = timeit.default_timer()
 
         # Draw all the sprites.
-        self.wall_list.draw()
+        self.scene.draw()
         self.player_list.draw()
         self.frostfire_list.draw()
 
         # Draw info on the screen
-        sprite_count = len(self.wall_list)
+        sprite_count = len(self.scene["walls"])
 
         output = f"Sprite Count: {sprite_count}"
         arcade.draw_text(output,
@@ -272,9 +252,9 @@ class MyGame(arcade.View):
         """ Movement and game logic """
     
         self.player_sprite.update()
-        if arcade.check_for_collision_with_list(self.player_sprite, self.wall_list):
+        if arcade.check_for_collision_with_list(self.player_sprite, self.scene["walls"]):
             self.setup() # Restart the game on collision
-        if arcade.check_for_collision_with_list(self.player_sprite, self.wall_list):
+        if arcade.check_for_collision_with_list(self.player_sprite, self.scene["walls"]):
             self.setup() # Restart the game on collision
 
         # Generate a list of all sprites that collided with the player.
